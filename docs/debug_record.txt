@@ -1,0 +1,46 @@
+0x4008857f:0x3ffd3170 panic_abort
+0x40088c29:0x3ffd3190 panic_restart
+0x4008c772:0x3ffd31b0 abort
+0x4010281f:0x3ffd3220 __assert_func
+0x4008294f:0x3ffd3250 spi_device_release_bus
+0x400ebd0e:0x3ffd3270 disp_spi_transaction
+0x400ebde5:0x3ffd32c0 ili9341_send_cmd
+0x400ec0fd:0x3ffd32f0 ili9341_flush
+0x400ebb61:0x3ffd3320 disp_driver_flush
+0x400d89f7:0x3ffd3340 lv_refr_vdb_flush
+0x400d8b41:0x3ffd3360 lv_refr_area_part
+0x400d8ca1:0x3ffd33f0 lv_refr_area
+0x400d8d8d:0x3ffd3420 lv_refr_areas
+0x400d8dec:0x3ffd3440 _lv_disp_refr_task
+0x400e35ed:0x3ffd3470 lv_task_exec
+0x400e36d8:0x3ffd3490 lv_task_handler
+0x400d3271:0x3ffd34b0 guiTask
+0x40088c31:0x3ffd34d0 vPortTaskWrapper
+
+Backtrace:
+0x40084072:0x3ffbe400 panic_abort
+0x40089e65:0x3ffbe420 
+0x400904a9:0x3ffbe440 
+0x4008aaef:0x3ffbe560 xQueueTakeMutexRecursive
+0x40081776:0x3ffbe580 disp_spi.o IRAM
+0x40082a63:0x3ffbe5b0 
+0x40082bd5:0x3ffbe5d0 
+0x40084ccd:0x3ffbe600 
+0x40115cbb:0x3ffbd020 
+0x400fa57b:0x3ffbd040 
+0x4008b631:0x3ffbd060 
+0x4008d279:0x3ffbd080 
+
+void Core2ForAWS_Display_SetBrightness(uint8_t brightness) {
+    if (brightness > 100) {
+        brightness = 100;
+    }
+    uint16_t volt = (uint32_t)brightness * (DISPLAY_BRIGHTNESS_MAX_VOLT - DISPLAY_BRIGHTNESS_MIN_VOLT) / 100 + DISPLAY_BRIGHTNESS_MIN_VOLT;
+    Axp192_SetDCDC3Volt(volt);
+}
+
+max = 3300
+min = 2200
+
+volt = sqrt(brightness * (max * max - min * min) / 100 + min * min);
+
