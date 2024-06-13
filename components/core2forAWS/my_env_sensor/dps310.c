@@ -219,12 +219,19 @@ esp_err_t dps310_get_compensation_coefficients(dps310_device_t * device) {
     if (coef_c30 & 0x00008000) coef_c30 -= 0x00010000;
     device->coes.c30 = (double)coef_c30;
 
+    ESP_LOG_BUFFER_HEX("DPS310", coef, 18);
+    ESP_LOGE("DPS310", "c0: 0x%8.8X, c1: 0x%8.8X, c00: 0x%8.8X, c10: 0x%8.8X, c01: 0x%8.8X, c11: 0x%8.8X, c20: 0x%8.8X, c21: 0x%8.8X, c30: 0x%8.8X", coef_c0, coef_c1, coef_c00, coef_c10, coef_c01, coef_c11, coef_c20, coef_c21, coef_c30);
+    ESP_LOGE("DPS310", "c0: %d, c1: %d, c00: %d, c10: %d, c01: %d, c11: %d, c20: %d, c21: %d, c30: %d", coef_c0, coef_c1, coef_c00, coef_c10, coef_c01, coef_c11, coef_c20, coef_c21, coef_c30);
+
     return ESP_OK;
 }
 
 esp_err_t dps310_fetch_result(dps310_device_t * device, double * temperature, double * pressure) {
     uint8_t result_reg[6];
     esp_err_t return_value = i2c_read_bytes(device->i2c_interface, DPS310_REG_PSR_B2, result_reg, 6);
+
+    ESP_LOG_BUFFER_HEX("DPS310", result_reg, 6);
+
     if (return_value == ESP_OK)
     {
         int32_t raw_temperature = (result_reg[3] << 16) + (result_reg[4] << 8) + result_reg[5];
@@ -232,9 +239,13 @@ esp_err_t dps310_fetch_result(dps310_device_t * device, double * temperature, do
         int32_t raw_pressure = (result_reg[0] << 16) + (result_reg[1] << 8) + result_reg[2];
         if (raw_pressure > 0x007fffff) raw_pressure -= 0x01000000;
 
+        ESP_LOGE("DPS310", "raw_temperature: 0x%8.8X, raw_pressure: 0x%8.8X", raw_temperature, raw_pressure);
+
         double scaled_temperature = (double)raw_temperature / device->sf.tsf;
         double scaled_pressure = (double)raw_pressure / device->sf.psf;
 
+        ESP_LOGE("DPS310", "scaled_temperature: %f, scaled_pressure: %f", scaled_temperature, scaled_pressure);
+        
         double compensated_temperature = 0.5 * device->coes.c0 + scaled_temperature * device->coes.c1;
         double compensated_pressure = device->coes.c00 + scaled_pressure * (device->coes.c10 + scaled_pressure *(device->coes.c20 + scaled_pressure * device->coes.c30)) +
             scaled_temperature * device->coes.c01 + scaled_temperature * scaled_pressure * (device->coes.c11 + scaled_pressure * device->coes.c21);
@@ -242,6 +253,8 @@ esp_err_t dps310_fetch_result(dps310_device_t * device, double * temperature, do
         *temperature = compensated_temperature;
         *pressure = compensated_pressure;
     }
+
+    ESP_LOGE("DPS310", "temperature: %f, pressure: %f", *temperature, *pressure);
 
     return return_value;
 }

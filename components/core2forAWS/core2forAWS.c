@@ -80,6 +80,9 @@ void Core2ForAWS_Init(void) {
         abort();
     }
 #endif
+
+    Core2ForAWS_Port_PinMode(PORT_C_UART_TX_PIN, UART);
+    Core2ForAWS_Port_C_UART_Begin(38400);
 }
 
 /* ===================================================================================================*/
@@ -569,7 +572,9 @@ esp_err_t Core2ForAWS_Port_C_UART_Begin(uint32_t baud){
     if(err != ESP_OK){
         ESP_LOGE(TAG, "Failed to configure UART %d with the provided configuration.", PORT_C_UART_NUM);
         return err;
-    }    
+    } else {
+        ESP_LOGE(TAG, "Configure UART %d with the provided configuration.", PORT_C_UART_NUM);
+    }
 
     return err;
 }
@@ -589,7 +594,7 @@ int Core2ForAWS_Port_C_UART_Receive(uint8_t *message_buffer){
     }
 
     if (cached_buffer_length) {
-        rxBytes = uart_read_bytes(PORT_C_UART_NUM, message_buffer, (size_t)&cached_buffer_length, pdMS_TO_TICKS(20));
+        rxBytes = uart_read_bytes(PORT_C_UART_NUM, message_buffer, (size_t)&cached_buffer_length, pdMS_TO_TICKS(10));
     }
     return rxBytes;
 }

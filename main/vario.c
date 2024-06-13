@@ -76,6 +76,8 @@ static TaskHandle_t sht3x_task_handle = NULL;
 static qmc5883l_device_t * qmc5883l = NULL;
 static TaskHandle_t qmc5883l_task_handle = NULL;
 
+//static uint8_t uart_buffer[UART_RX_BUF_SIZE+1];
+
 void vario_start(void) {
     if (vario_speed_mutex == NULL) {
         vario_speed_mutex = xSemaphoreCreateMutex();
@@ -108,7 +110,8 @@ void vario_start(void) {
         xTaskCreate(vario_qmp6988_loop, "Qmp6998Task", 8192, NULL, tskIDLE_PRIORITY+5, &qmp6988_task_handle);
     }
 
-    dps310 = dps310_init_device(I2C_NUM_0, GPIO_NUM_32, GPIO_NUM_33, QMP6988_I2C_FAST_FREQUENCY, DPS310_I2C_SLAVE_ADDR);
+//    dps310 = dps310_init_device(I2C_NUM_0, GPIO_NUM_32, GPIO_NUM_33, QMP6988_I2C_FAST_FREQUENCY, DPS310_I2C_SLAVE_ADDR);
+    dps310 = dps310_init_device(I2C_NUM_1, GPIO_NUM_21, GPIO_NUM_22, QMP6988_I2C_FAST_FREQUENCY, 0x76);
     if (dps310 != NULL) {
         xTaskCreate(vario_dps310_loop, "Dps310Task", 8192, NULL, tskIDLE_PRIORITY+5, &dps310_task_handle);
     }
@@ -217,6 +220,16 @@ void vario_dps310_loop(void * arguments) {
             }
         } else {
             log_e("vario_dps310_loop->dps310_get_status failed");
+        }
+
+        uint8_t *data = heap_caps_malloc(UART_RX_BUF_SIZE+1, MALLOC_CAP_SPIRAM);
+        if (data) {
+            int data_len = Core2ForAWS_Port_C_UART_Receive(data);
+            if (data_len > 0) {
+                data[(data_len < UART_RX_BUF_SIZE) ? data_len : UART_RX_BUF_SIZE] = 0;
+                log_e("%s", (char*)data);
+            }
+            free(data);
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));
